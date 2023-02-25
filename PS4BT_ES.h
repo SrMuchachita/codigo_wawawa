@@ -18,7 +18,7 @@
 #include "Usb.h"
 #include "controllerEnums.h"
 
-/** Buttons on the controller */
+/** Botones del mando */
 const uint8_t PS4_BUTTONS[] PROGMEM = {
         UP, // UP
         RIGHT, // RIGHT
@@ -69,13 +69,13 @@ union PS4Buttons {
 } __attribute__((packed));
 
 struct touchpadXY {
-        uint8_t dummy; // I can not figure out what this data is for, it seems to change randomly, maybe a timestamp?
+        uint8_t dummy; // No consigo averiguar para qué sirven estos datos, parece que cambian aleatoriamente, ¿quizás una marca de tiempo?
         struct {
-                uint8_t counter : 7; // Increments every time a finger is touching the touchpad
-                uint8_t touching : 1; // The top bit is cleared if the finger is touching the touchpad
+                uint8_t counter : 7; // Aumenta cada vez que un dedo toca el panel táctil
+                uint8_t touching : 1; // El bit superior se borra si el dedo está tocando el touchpad
                 uint16_t x : 12;
                 uint16_t y : 12;
-        } __attribute__((packed)) finger[2]; // 0 = first finger, 1 = second finger
+        } __attribute__((packed)) finger[2]; // 0 = primer dedo, 1 = segundo dedo
 } __attribute__((packed));
 
 struct PS4Status {
@@ -83,17 +83,17 @@ struct PS4Status {
         uint8_t usb : 1;
         uint8_t audio : 1;
         uint8_t mic : 1;
-        uint8_t unknown : 1; // Extension port?
+        uint8_t unknown : 1; // ¿Puerto de extensión?
 } __attribute__((packed));
 
 struct PS4Data {
-        /* Button and joystick values */
+        /* Valores de botones y joystick */
         uint8_t hatValue[4];
         PS4Buttons btn;
         uint8_t trigger[2];
 
-        /* Gyro and accelerometer values */
-        uint8_t dummy[3]; // First two looks random, while the third one might be some kind of status - it increments once in a while
+        /* Valores del giroscopio y el acelerómetro */
+        uint8_t dummy[3]; // Los dos primeros parecen aleatorios, mientras que el tercero podría ser algún tipo de estado, ya que se incrementa de vez en cuando.
         int16_t gyroY, gyroZ, gyroX;
         int16_t accX, accZ, accY;
 
@@ -101,75 +101,75 @@ struct PS4Data {
         PS4Status status;
         uint8_t dummy3[3];
 
-        /* The rest is data for the touchpad */
-        touchpadXY xy[3]; // It looks like it sends out three coordinates each time, this might be because the microcontroller inside the PS4 controller is much faster than the Bluetooth connection.
-                          // The last data is read from the last position in the array while the oldest measurement is from the first position.
-                          // The first position will also keep it's value after the finger is released, while the other two will set them to zero.
-                          // Note that if you read fast enough from the device, then only the first one will contain any data.
+        /* El resto son datos para el touchpad */
+        touchpadXY xy[3]; // Parece que envía tres coordenadas cada vez, esto puede ser debido a que el microcontrolador dentro del controlador PS4 es mucho más rápido que la conexión Bluetooth.
+                          // El último dato se lee de la última posición del array mientras que la medida más antigua es de la primera posición.
+                          // La primera posición también mantendrá su valor después de soltar el dedo, mientras que las otras dos se pondrán a cero.
+                          // Ten en cuenta que si lees lo suficientemente rápido del dispositivo, sólo la primera contendrá algún dato.
 
-        // The last three bytes are always: 0x00, 0x80, 0x00
+        // Los últimos tres bytes son siempre: 0x00, 0x80, 0x00
 } __attribute__((packed));
 
 struct PS4Output {
         uint8_t bigRumble, smallRumble; // Rumble
         uint8_t r, g, b; // RGB
-        uint8_t flashOn, flashOff; // Time to flash bright/dark (255 = 2.5 seconds)
-        bool reportChanged; // The data is send when data is received from the controller
+        uint8_t flashOn, flashOff; // Tiempo de parpadeo claro/oscuro (255 = 2,5 segundos)
+        bool reportChanged; // Los datos se envían cuando se reciben datos del controlador
 } __attribute__((packed));
 
-/** This class parses all the data sent by the PS4 controller */
+/** Esta clase analiza todos los datos enviados por el controlador PS4 */
 class PS4Parser {
 public:
-        /** Constructor for the PS4Parser class. */
+        /** Constructor para la clase PS4Parser. */
         PS4Parser() {
                 Reset();
         };
 
-        /** @name PS4 Controller functions */
+        /** @nombre Funciones del mando PS4 */
         /**
-         * getButtonPress(ButtonEnum b) will return true as long as the button is held down.
+         * getButtonPress(ButtonEnum b) devolverá true mientras se mantenga pulsado el botón.
          *
-         * While getButtonClick(ButtonEnum b) will only return it once.
+         * Mientras que getButtonClick(ButtonEnum b) sólo lo devolverá una vez.
          *
-         * So you instance if you need to increase a variable once you would use getButtonClick(ButtonEnum b),
-         * but if you need to drive a robot forward you would use getButtonPress(ButtonEnum b).
-         * @param  b          ::ButtonEnum to read.
-         * @return            getButtonPress(ButtonEnum b) will return a true as long as a button is held down, while getButtonClick(ButtonEnum b) will return true once for each button press.
+         * Así, por ejemplo, si necesitas aumentar una variable una vez, utilizarías getButtonClick(ButtonEnum b),
+         * pero si necesitas hacer avanzar un robot usarías getButtonPress(ButtonEnum b).
+         * @param b           ::ButtonEnum para leer.
+         * @return            getButtonPress(ButtonEnum b) devolverá un true mientras se mantenga pulsado un botón, mientras que getButtonClick(ButtonEnum b) devolverá true una vez por cada pulsación de botón.
          */
         bool getButtonPress(ButtonEnum b);
         bool getButtonClick(ButtonEnum b);
         /**@}*/
-        /** @name PS4 Controller functions */
+        /** @nombre Funciones del mando PS4 */
         /**
-         * Used to get the analog value from button presses.
-         * @param  b The ::ButtonEnum to read.
-         * The supported buttons are:
+         * Se utiliza para obtener el valor analógico de las pulsaciones de botón.
+         * @param b          El ::ButtonEnum a leer.
+         * Los botones compatibles son:
          * ::L2 and ::R2.
-         * @return   Analog value in the range of 0-255.
+         * @return           Valor analógico en el rango de 0-255.
          */
         uint8_t getAnalogButton(ButtonEnum b);
 
         /**
-         * Used to read the analog joystick.
-         * @param  a ::LeftHatX, ::LeftHatY, ::RightHatX, and ::RightHatY.
-         * @return   Return the analog value in the range of 0-255.
+         * Se utiliza para leer el joystick analógico.
+         * @param  a   ::LeftHatX, ::LeftHatY, ::RightHatX, and ::RightHatY.
+         * @return     Devuelve el valor analógico en el rango de 0-255.
          */
         uint8_t getAnalogHat(AnalogHatEnum a);
 
         /**
-         * Get the x-coordinate of the touchpad. Position 0 is in the top left.
+         * Obtiene la coordenada x del touchpad. La posición 0 está en la parte superior izquierda.
          * @param  finger 0 = first finger, 1 = second finger. If omitted, then 0 will be used.
-         * @param  xyId   The controller sends out three packets with the same structure.
-         *                The third one will contain the last measure, but if you read from the controller then there is only be data in the first one.
-         *                For that reason it will be set to 0 if the argument is omitted.
-         * @return        Returns the x-coordinate of the finger.
+         * @param  xyId   El controlador envía tres paquetes con la misma estructura.
+         *                El tercero contendrá el último compás, pero si se lee desde el controlador sólo habrá datos en el primero.
+         *                Por eso se pondrá a 0 si se omite el argumento.
+         * @return        Devuelve la coordenada x del dedo.
          */
         uint16_t getX(uint8_t finger = 0, uint8_t xyId = 0) {
                 return ps4Data.xy[xyId].finger[finger].x;
         };
 
         /**
-         * Get the y-coordinate of the touchpad. Position 0 is in the top left.
+         * Obtiene la coordenada y del touchpad. La posición 0 está en la parte superior izquierda.
          * @param  finger 0 = first finger, 1 = second finger. If omitted, then 0 will be used.
          * @param  xyId   The controller sends out three packets with the same structure.
          *                The third one will contain the last measure, but if you read from the controller then there is only be data in the first one.
@@ -181,7 +181,7 @@ public:
         };
 
         /**
-         * Returns whenever the user is toucing the touchpad.
+         * Aparece cuando el usuario toca el panel táctil.
          * @param  finger 0 = first finger, 1 = second finger. If omitted, then 0 will be used.
          * @param  xyId   The controller sends out three packets with the same structure.
          *                The third one will contain the last measure, but if you read from the controller then there is only be data in the first one.
@@ -193,7 +193,7 @@ public:
         };
 
         /**
-         * This counter increments every time a finger touches the touchpad.
+         * Este contador se incrementa cada vez que un dedo toca el panel táctil.
          * @param  finger 0 = first finger, 1 = second finger. If omitted, then 0 will be used.
          * @param  xyId   The controller sends out three packets with the same structure.
          *                The third one will contain the last measure, but if you read from the controller then there is only be data in the first one.
@@ -205,9 +205,9 @@ public:
         };
 
         /**
-         * Get the angle of the controller calculated using the accelerometer.
+         * Obtén el ángulo del controlador calculado mediante el acelerómetro.
          * @param  a Either ::Pitch or ::Roll.
-         * @return   Return the angle in the range of 0-360.
+         * @return   Devuelve el ángulo en el rango de 0-360.
          */
         float getAngle(AngleEnum a) {
                 if (a == Pitch)
@@ -217,9 +217,9 @@ public:
         };
 
         /**
-         * Used to get the raw values from the 3-axis gyroscope and 3-axis accelerometer inside the PS4 controller.
-         * @param  s The sensor to read.
-         * @return   Returns the raw sensor reading.
+         * Se utiliza para obtener los valores brutos del giroscopio de 3 ejes y el acelerómetro de 3 ejes del mando de PS4.
+         * @param  s El sensor para leer.
+         * @return   Devuelve la lectura del sensor sin procesar.
          */
         int16_t getSensor(SensorEnum s) {
                 switch(s) {
@@ -241,50 +241,50 @@ public:
         };
 
         /**
-         * Return the battery level of the PS4 controller.
-         * @return The battery level in the range 0-15.
+         * Devuelve el nivel de batería del mando PS4.
+         * @return El nivel de batería en el rango 0-15.
          */
         uint8_t getBatteryLevel() {
                 return ps4Data.status.battery;
         };
 
         /**
-         * Use this to check if an USB cable is connected to the PS4 controller.
-         * @return Returns true if an USB cable is connected.
+         * Sirve para comprobar si hay un cable USB conectado al mando de PS4.
+         * @return Devuelve true si hay un cable USB conectado.
          */
         bool getUsbStatus() {
                 return ps4Data.status.usb;
         };
 
         /**
-         * Use this to check if an audio jack cable is connected to the PS4 controller.
-         * @return Returns true if an audio jack cable is connected.
+         * Sirve para comprobar si hay un cable de audio conectado al mando de PS4.
+         * @return Devuelve true si hay un cable de audio conectado.
          */
         bool getAudioStatus() {
                 return ps4Data.status.audio;
         };
 
         /**
-         * Use this to check if a microphone is connected to the PS4 controller.
-         * @return Returns true if a microphone is connected.
+         * Permite comprobar si hay un micrófono conectado al mando de PS4.
+         * @return Devuelve true si hay un micrófono conectado.
          */
         bool getMicStatus() {
                 return ps4Data.status.mic;
         };
 
-        /** Turn both rumble and the LEDs off. */
+        /** Apaga el Rumble y los LEDs. */
         void setAllOff() {
                 setRumbleOff();
                 setLedOff();
         };
 
-        /** Set rumble off. */
+        /** Apaga el Rumble. */
         void setRumbleOff() {
                 setRumbleOn(0, 0);
         };
 
         /**
-         * Turn on rumble.
+         * Enciende el rumble.
          * @param mode Either ::RumbleHigh or ::RumbleLow.
          */
         void setRumbleOn(RumbleEnum mode) {
@@ -305,13 +305,13 @@ public:
                 ps4Output.reportChanged = true;
         };
 
-        /** Turn all LEDs off. */
+        /** Apaga todos los LED. */
         void setLedOff() {
                 setLed(0, 0, 0);
         };
 
         /**
-         * Use this to set the color using RGB values.
+         * Utilícelo para establecer el color utilizando valores RGB.
          * @param r,g,b RGB value.
          */
         void setLed(uint8_t r, uint8_t g, uint8_t b) {
@@ -322,17 +322,17 @@ public:
         };
 
         /**
-         * Use this to set the color using the predefined colors in ::ColorsEnum.
-         * @param color The desired color.
+         * Utilícelo para establecer el color utilizando los colores predefinidos en ::ColorsEnum.
+         * @param color El color deseado.
          */
         void setLed(ColorsEnum color) {
                 setLed((uint8_t)(color >> 16), (uint8_t)(color >> 8), (uint8_t)(color));
         };
 
         /**
-         * Set the LEDs flash time.
-         * @param flashOn  Time to flash bright (255 = 2.5 seconds).
-         * @param flashOff Time to flash dark (255 = 2.5 seconds).
+         * Ajusta el tiempo de parpadeo de los LEDs.
+         * @param flashOn  Tiempo de brillar (255 = 2.5 seconds).
+         * @param flashOff Tiempo de parpadear oscuro (255 = 2.5 seconds).
          */
         void setLedFlash(uint8_t flashOn, uint8_t flashOff) {
                 ps4Output.flashOn = flashOn;
@@ -360,7 +360,7 @@ protected:
 
 private:
         static int8_t getButtonIndexPS4(ButtonEnum b);
-        bool checkDpad(ButtonEnum b); // Used to check PS4 DPAD buttons
+        bool checkDpad(ButtonEnum b); // Se utiliza para comprobar los botones DPAD de PS4
 
         PS4Data ps4Data;
         PS4Buttons oldButtonState, buttonClickState;
