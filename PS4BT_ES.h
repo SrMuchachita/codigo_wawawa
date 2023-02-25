@@ -295,9 +295,9 @@ public:
         };
 
         /**
-         * Turn on rumble.
-         * @param bigRumble   Value for big motor.
-         * @param smallRumble Value for small motor.
+         * Enciende el rumble.
+         * @param bigRumble   Valor para motor grande.
+         * @param smallRumble Valor para motor pequeño.
          */
         void setRumbleOn(uint8_t bigRumble, uint8_t smallRumble) {
                 ps4Output.bigRumble = bigRumble;
